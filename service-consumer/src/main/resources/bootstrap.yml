@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: service-consumer
+  profiles:
+    active:
+    - dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        file-extension: yml
+        server-addr: ${nacos_server_addr:192.168.120.133:30848}
+      discovery:
+        server-addr: ${nacos_server_addr:192.168.120.133:30848}
+    inetutils:
+      preferred-networks:
+      - 192.168

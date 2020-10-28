@@ -1,0 +1,26 @@
+server:
+  port: 19003
+spring:
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+      - predicates:
+        - Path= /c/**
+        uri: ${service-consumer-addr:http://192.168.120.133:30902}
+        filters:
+        - StripPrefix=1
+      - predicates:
+        - Path= /p/**
+        uri: ${service-producer-addr:http://192.168.120.133:30901}
+        filters:
+        - StripPrefix=1

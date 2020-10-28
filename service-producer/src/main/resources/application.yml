@@ -1,0 +1,9 @@
+server:
+  port: 19001
+
+k8s:
+  ip: ${mysql_ip:192.168.120.133}
+  port: ${mysql_port:30036}
+  user: ${mysql_user:root}
+  authstring: ${mysql_authstring:root}
+  from: ${mysql_config_from:default}

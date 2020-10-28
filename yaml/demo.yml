@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-demo-deployment
+  namespace: k8s-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-demo
+  template:
+    metadata:
+      labels:
+        app: k8s-demo
+    spec:
+      containers:
+        - name: service-producer
+          image: 192.168.120.133:5000/service-producer:0.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 19001
+          env:
+            - name: nacos_server_addr
+              value: 192.168.120.133:30848
+            - name: mysql_ip
+              value: "192.168.120.133"
+            - name: mysql_port
+              value: "30036"
+            - name: mysql_user
+              value: root
+            - name: mysql_authstring
+              value: root
+            - name: mysql_config_from
+              value: k8s
+        - name: service-consumer
+          image: 192.168.120.133:5000/service-consumer:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 19002
+          env:
+            - name: nacos_server_addr
+              value: 192.168.120.133:30848
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-demo-svc
+  namespace: k8s-demo
+  labels:
+    name: k8s-demo-svc
+spec:
+  type: NodePort
+  ports:
+    - port: 19001
+      targetPort: 19001
+      name: service-producer
+      protocol: TCP
+      nodePort: 30901
+    - port: 19002
+      targetPort: 19002
+      name: service-consumer
+      protocol: TCP
+      nodePort: 30902
+  selector:
+    app: k8s-demo
