@@ -15,7 +15,7 @@
     <description>Demo project for Spring Boot</description>
 
     <properties>
-        <skipDockerBuild>true</skipDockerBuild>
+        <skipDockerBuild>${consumer-skipDockerBuild}</skipDockerBuild>
     </properties>
 
     <dependencies>

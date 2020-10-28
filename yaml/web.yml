@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: k8s-demo-web-deployment
   namespace: k8s-demo
+  labels:
+    k8s.kuboard.cn/layer: web
 spec:
   replicas: 1
   selector:
@@ -15,7 +17,7 @@ spec:
     spec:
       containers:
         - name: service-web
-          image: 192.168.120.133:5000/service-web:0.0.2
+          image: 192.168.120.133:5000/service-web:0.0.2.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

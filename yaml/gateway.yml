@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: k8s-demo-gateway-deployment
   namespace: k8s-demo
+  labels:
+    k8s.kuboard.cn/layer: gateway
 spec:
   replicas: 1
   selector:
@@ -15,7 +17,7 @@ spec:
     spec:
       containers:
         - name: service-gateway
-          image: 192.168.120.133:5000/service-gateway:0.0.1
+          image: 192.168.120.133:5000/service-gateway:0.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 19003

@@ -30,6 +30,8 @@ kind: Deployment
 metadata:
   name: mysql-deployment
   namespace: k8s-demo
+  labels:
+    k8s.kuboard.cn/layer: db
 spec:
   replicas: 1
   selector:

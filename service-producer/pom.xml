@@ -10,12 +10,12 @@
 
     <groupId>com.github.toxrink</groupId>
     <artifactId>service-producer</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <name>service-producer</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
-        <skipDockerBuild>false</skipDockerBuild>
+        <skipDockerBuild>${producer-skipDockerBuild}</skipDockerBuild>
     </properties>
 
     <dependencies>
