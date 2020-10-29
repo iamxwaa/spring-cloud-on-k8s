@@ -17,10 +17,13 @@ spec:
     spec:
       containers:
         - name: service-producer
-          image: 192.168.120.133:5000/service-producer:0.0.2
+          image: 192.168.120.133:5000/service-producer:0.0.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 19001
+          volumeMounts:
+            - name: application-logs-dir
+              mountPath: "/var/log"
           env:
             - name: nacos_server_addr
               value: 192.168.120.133:30848
@@ -42,6 +45,11 @@ spec:
           env:
             - name: nacos_server_addr
               value: 192.168.120.133:30848
+      volumes:
+        - name: application-logs-dir
+          hostPath:
+            path: /var/log/k8s-demo
+            type: DirectoryOrCreate
 
 ---
 
