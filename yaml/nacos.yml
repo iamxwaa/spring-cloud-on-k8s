@@ -81,6 +81,8 @@ spec:
             - name: nacos-config-volume
               mountPath: "/home/nacos/conf/application.properties"
               subPath: "application.properties"
+            - name: application-logs-dir
+              mountPath: "/home/nacos/logs"
           resources:
             limits:
               cpu: 500m
@@ -97,10 +99,26 @@ spec:
               value: "1g"
             - name: JVM_XMN
               value: "512m"
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: "mysql"
+            - name: MYSQL_SERVICE_HOST
+              value: "192.168.120.133"
+            - name: MYSQL_SERVICE_PORT
+              value: "30036"
+            - name: MYSQL_SERVICE_DB_NAME
+              value: "nacos"
+            - name: MYSQL_SERVICE_USER
+              value: "root"
+            - name: MYSQL_SERVICE_PASSWORD
+              value: "root"
       volumes:
         - name: nacos-config-volume
           configMap:
             name: nacos-config
+        - name: application-logs-dir
+          hostPath:
+            path: /var/log/k8s-demo-nacos
+            type: DirectoryOrCreate
 ---
 
 apiVersion: v1
