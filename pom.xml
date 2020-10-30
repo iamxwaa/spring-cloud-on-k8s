@@ -23,8 +23,8 @@
         <java.version>1.8</java.version>
         <dockerfile-maven.version>1.4.13</dockerfile-maven.version>
         <spring-cloud.version>Finchley.SR4</spring-cloud.version>
-        <consumer-skipDockerBuild>true</consumer-skipDockerBuild>
-        <gateway-skipDockerBuild>true</gateway-skipDockerBuild>
+        <consumer-skipDockerBuild>false</consumer-skipDockerBuild>
+        <gateway-skipDockerBuild>false</gateway-skipDockerBuild>
         <producer-skipDockerBuild>false</producer-skipDockerBuild>
     </properties>
 

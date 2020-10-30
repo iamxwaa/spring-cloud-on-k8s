@@ -65,14 +65,14 @@
             var form = layui.form;
             form.on('submit(producer)', function (data) {
                 form.val("producer-form", { desc1: "" })
-                $.getJSON("http://192.168.120.133:30903/p/test", function (data) {
+                $.getJSON("/p/test", function (data) {
                     form.val("producer-form", { desc1: JSON.stringify(data) });
                 })
                 return false;
             });
             form.on('submit(consumer)', function (data) {
                 form.val("consumer-form", { desc2: "" })
-                $.getJSON("http://192.168.120.133:30903/c/test", function (data) {
+                $.getJSON("/c/test", function (data) {
                     form.val("consumer-form", { desc2: JSON.stringify(data) });
                 })
                 return false;
