@@ -1,0 +1,491 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spring-cloud-on-k8s
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nacos-config
+  namespace: spring-cloud-on-k8s
+data:
+  application.properties: |
+    # spring
+    server.servlet.contextPath=${SERVER_SERVLET_CONTEXTPATH:/nacos}
+    server.contextPath=/nacos
+    server.port=${NACOS_APPLICATION_PORT:8848}
+    spring.datasource.platform=${SPRING_DATASOURCE_PLATFORM:""}
+    nacos.cmdb.dumpTaskInterval=3600
+    nacos.cmdb.eventTaskInterval=10
+    nacos.cmdb.labelTaskInterval=300
+    nacos.cmdb.loadDataAtStart=false
+    db.num=${MYSQL_DATABASE_NUM:1}
+    db.url.0=jdbc:mysql://${MYSQL_SERVICE_HOST}:${MYSQL_SERVICE_PORT:3306}/${MYSQL_SERVICE_DB_NAME}?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=${MYSQL_SSL_ENABLE:false}
+    db.url.1=jdbc:mysql://${MYSQL_SERVICE_HOST}:${MYSQL_SERVICE_PORT:3306}/${MYSQL_SERVICE_DB_NAME}?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=${MYSQL_SSL_ENABLE:false}
+    db.user=${MYSQL_SERVICE_USER}
+    db.password=${MYSQL_SERVICE_PASSWORD}
+    ### The auth system to use, currently only 'nacos' is supported:
+    nacos.core.auth.system.type=${NACOS_AUTH_SYSTEM_TYPE:nacos}
+
+
+    ### The token expiration in seconds:
+    nacos.core.auth.default.token.expire.seconds=${NACOS_AUTH_TOKEN_EXPIRE_SECONDS:18000}
+
+    ### The default token:
+    nacos.core.auth.default.token.secret.key=${NACOS_AUTH_TOKEN:SecretKey012345678901234567890123456789012345678901234567890123456789}
+
+    ### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.
+    nacos.core.auth.caching.enabled=${NACOS_AUTH_CACHE_ENABLE:false}
+
+    server.tomcat.accesslog.enabled=${TOMCAT_ACCESSLOG_ENABLED:false}
+    server.tomcat.accesslog.pattern=%h %l %u %t "%r" %s %b %D
+    # default current work dir
+    server.tomcat.basedir=
+    ## spring security config
+    ### turn off security
+    nacos.security.ignore.urls=/,/error,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/v1/auth/**,/v1/console/health/**,/actuator/**,/v1/console/server/**
+    # metrics for elastic search
+    management.metrics.export.elastic.enabled=false
+    management.metrics.export.influx.enabled=false
+
+    nacos.naming.distro.taskDispatchThreadCount=10
+    nacos.naming.distro.taskDispatchPeriod=200
+    nacos.naming.distro.batchSyncKeyCount=1000
+    nacos.naming.distro.initDataRatio=0.9
+    nacos.naming.distro.syncRetryDelay=5000
+    nacos.naming.data.warmup=true
+
+    management.endpoints.web.exposure.include=*
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: spring-cloud-on-k8s
+data:
+  default.conf: |-
+    server {
+        listen       8080;
+        listen  [::]:8080;
+        server_name  localhost;
+
+        #charset koi8-r;
+        #access_log  /var/log/nginx/host.access.log  main;
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nacos-server
+  namespace: spring-cloud-on-k8s
+  labels:
+    k8s.kuboard.cn/layer: svc
+spec:
+  selector:
+    matchLabels:
+      app: nacos-server
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: nacos-server
+    spec:
+      containers:
+      - name: nacos-server
+        image: 192.168.120.133:5000/nacos-server:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 520Mi
+        env:
+        - name: MODE
+          value: "standalone"
+        - name: JVM_XMS
+          value: "512m"
+        - name: JVM_XMX
+          value: "512m"
+        - name: JVM_XMN
+          value: "256m"
+        - name: SPRING_DATASOURCE_PLATFORM
+          value: "mysql"
+        - name: MYSQL_SERVICE_HOST
+          value: "192.168.120.133"
+        - name: MYSQL_SERVICE_PORT
+          value: "30036"
+        - name: MYSQL_SERVICE_DB_NAME
+          value: "nacos2"
+        - name: MYSQL_SERVICE_USER
+          value: "root"
+        - name: MYSQL_SERVICE_PASSWORD
+          value: "root"
+        ports:
+        - containerPort:  8848
+        volumeMounts:
+        - name: nacos-config-volume
+          mountPath: "/home/nacos/conf/application.properties"
+          subPath: "application.properties"
+        - name: nacos-logs-dir
+          mountPath: "/home/nacos/logs"
+      volumes:
+      - name: nacos-config-volume
+        configMap:
+          name: nacos-config
+      - name: nacos-logs-dir
+        hostPath:
+          path: /var/log/spring-cloud-on-k8s-nacos
+          type: DirectoryOrCreate
+      restartPolicy: Always
+      
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: spring-cloud-on-k8s
+  labels:
+    k8s.kuboard.cn/layer: web
+spec:
+  selector:
+    matchLabels:
+      app: web
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: service-web
+        image: 192.168.120.133:5000/service-web:0.0.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: "/etc/nginx/conf.d/"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 500m
+            memory: 100Mi
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service
+  namespace: spring-cloud-on-k8s
+  labels:
+    k8s.kuboard.cn/layer: svc
+spec:
+  selector:
+    matchLabels:
+      app: service
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: service
+    spec:
+      containers:
+      - name: service-producer
+        image: 192.168.120.133:5000/service-producer:0.0.4
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 520Mi
+        ports:
+        - containerPort: 19001
+        volumeMounts:
+        - name: application-logs-dir
+          mountPath: "/var/log"
+        env:
+        - name: nacos_server_addr
+          value: "nacos-server:8848"
+        - name: mysql_ip
+          value: "192.168.120.133"
+        - name: mysql_port
+          value: "30036"
+        - name: mysql_user
+          value: root
+        - name: mysql_authstring
+          value: root
+        - name: mysql_config_from
+          value: k8s
+      - name: service-consumer
+        image: 192.168.120.133:5000/service-consumer:0.0.1
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 520Mi
+        ports:
+        - containerPort: 19002
+        env:
+        - name: nacos_server_addr
+          value: "nacos-server:8848"
+      volumes:
+      - name: application-logs-dir
+        hostPath:
+          path: /var/log/spring-cloud-on-k8s-app
+          type: DirectoryOrCreate
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: spring-cloud-on-k8s
+  labels:
+    k8s.kuboard.cn/layer: gateway
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: service-gateway
+        image: 192.168.120.133:5000/service-gateway:0.0.2
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 520Mi        
+        ports:
+        - containerPort: 19003
+        env:
+        - name: service-producer-addr
+          value: http://service:19001
+        - name: service-consumer-addr
+          value: http://service:19002
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: spring-cloud-on-k8s
+spec:
+  selector:
+    app: web
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: web
+    protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: spring-cloud-on-k8s
+spec:
+  selector:
+    app: gateway
+  type: ClusterIP
+  ports:
+  - port: 19003
+    targetPort: 19003
+    name: service-gateway
+    protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos-server
+  namespace: spring-cloud-on-k8s
+spec:
+  selector:
+    app: nacos-server
+  type: ClusterIP
+  ports:
+  - port: 8848
+    targetPort: 8848
+    name: nacos-server
+    protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+  namespace: spring-cloud-on-k8s
+spec:
+  selector:
+    app: service
+  type: ClusterIP
+  ports:
+  - port: 19001
+    targetPort: 19001
+    name: producer
+    protocol: TCP
+  - port: 19002
+    targetPort: 19002
+    name: consumer
+    protocol: TCP
+
+---
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: nacos-server
+  name: nacos-server
+  namespace: spring-cloud-on-k8s
+spec:
+  rules:
+    - host: nacos.myspring.com
+      http:
+        paths:
+          - backend:
+              serviceName: nacos-server
+              servicePort: 8848
+            path: /nacos
+
+---
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: web
+  name: web
+  namespace: spring-cloud-on-k8s
+spec:
+  rules:            
+    - host: web.myspring.com
+      http:
+        paths:
+          - backend:
+              serviceName: web
+              servicePort: 8080
+            path: /
+          - backend:
+              serviceName: gateway
+              servicePort: 19003
+            path: /p
+          - backend:
+              serviceName: gateway
+              servicePort: 19003
+            path: /c
+---
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: gateway
+  name: gateway
+  namespace: spring-cloud-on-k8s
+spec:
+  rules:
+    - host: service.myspring.com
+      http:
+        paths:
+          - backend:
+              serviceName: gateway
+              servicePort: 19003
+            path: /
+
