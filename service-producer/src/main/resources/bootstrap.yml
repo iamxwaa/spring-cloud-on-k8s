@@ -15,3 +15,16 @@ spring:
     inetutils:
       preferred-networks:
       - 192.168
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
