@@ -30,7 +30,7 @@ public class TestController {
         Map<String, Object> map = new HashMap<>();
         map.put("time", System.currentTimeMillis());
         map.put("mysqlConfig", mysqlConfig.toString());
-        String url = "jdbc:mysql://" + mysqlConfig.getIp() + ":" + mysqlConfig.getPort() + "/k8s";
+        String url = "jdbc:mysql://" + mysqlConfig.getIp() + ":" + mysqlConfig.getPort() + "/k8s?useSSL=false";
         try {
             Connection conn = DriverManager.getConnection(url, mysqlConfig.getUser(), mysqlConfig.getAuthstring());
             Statement stmt = conn.createStatement();
